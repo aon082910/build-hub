@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>BuildHub</Name>
+  <Repository>allornothing/build-hub:latest</Repository>
+  <Registry>https://hub.docker.com/r/allornothing/build-hub</Registry>
+  <Network>bridge</Network>
+  <Privileged>false</Privileged>
+  <Project>https://github.com/aon082910/build-hub</Project>
+  <TemplateURL>https://raw.githubusercontent.com/aon082910/AoN-Unraid-Apps/main/templates/build-hub.xml</TemplateURL>
+  <ReadMe>https://raw.githubusercontent.com/aon082910/build-hub/main/UNRAID.md</ReadMe>
+  <License>MIT</License>
+  <Overview>
+Offline parts search and AI-assisted BOM generation for electronics and 3D-printing
+(RepRap) builds. Crawls electronics/maker marketplaces and component distributors
+into a local, offline-searchable catalog; paste or AI-generate a parts list and get
+the cheapest source per line with links, using landed cost (unit price x MOQ +
+shipping), never unit price alone.
+
+Set BUILDHUB_ADMIN_TOKEN before exposing this beyond your LAN -- without it the
+admin pages (which mutate the catalog) refuse to serve from a non-loopback address,
+which every container connection is. AI BOM generation is optional and off by
+default -- set AI_PROVIDER to enable it with a cloud API key or a local Ollama
+instance.
+
+Requires --shm-size=1g (below in Extra Parameters) -- several adapters render pages
+in a real Chromium, and Docker's default 64MB /dev/shm makes that crash silently.
+  </Overview>
+  <Category>Tools:Utilities Network:Web</Category>
+  <WebUI>http://[IP]:[PORT:8000]/</WebUI>
+  <Icon>https://raw.githubusercontent.com/aon082910/AoN-Unraid-Apps/main/icon.png</Icon>
+  <ExtraParams>--shm-size=1g</ExtraParams>
+  <Date>2026-09-01</Date>
+  <Changes>Initial release</Changes>
+  <MinVer>6.1</MinVer>
+  <Description>
+Offline parts search and AI-assisted BOM generation for electronics and 3D-printing
+builds, with links to real listings and landed-cost comparison.
+  </Description>
+
+  <Config Name="WebUI Port" Target="8000" Default="8000" Mode="tcp" Description="Web UI / API port" Type="Port" Display="always" Required="true" Mask="false">8000</Config>
+  <Config Name="Appdata" Target="/config" Default="/mnt/user/appdata/build-hub" Mode="rw" Description="Database, media, browser profile and editable YAML config" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/build-hub</Config>
+
+  <Config Name="PUID" Target="PUID" Default="99" Mode="" Description="Unraid's nobody user -- keeps appdata editable from the host" Type="Variable" Display="always" Required="true" Mask="false">99</Config>
+  <Config Name="PGID" Target="PGID" Default="100" Mode="" Description="Unraid's users group" Type="Variable" Display="always" Required="true" Mask="false">100</Config>
+  <Config Name="TZ" Target="TZ" Default="Etc/UTC" Mode="" Description="Timezone the crawl schedule is interpreted in" Type="Variable" Display="always" Required="true" Mask="false">Etc/UTC</Config>
+  <Config Name="Mode" Target="BUILDHUB_MODE" Default="serve" Mode="" Description="serve = web UI + scheduler; web = UI only; schedule = crawler only" Type="Variable" Display="always" Required="true" Mask="false">serve</Config>
+
+  <Config Name="Admin Token" Target="BUILDHUB_ADMIN_TOKEN" Default="" Mode="" Description="Required to reach /admin from a container. Any long random string; used as the HTTP Basic password." Type="Variable" Display="always" Required="false" Mask="true"></Config>
+
+  <Config Name="AI Provider" Target="AI_PROVIDER" Default="none" Mode="" Description="Optional: none | anthropic | ollama. Enables AI-generated BOMs from a plain-language build description." Type="Variable" Display="always" Required="false" Mask="false">none</Config>
+  <Config Name="AI API Key" Target="AI_API_KEY" Default="" Mode="" Description="Only used when AI Provider = anthropic" Type="Variable" Display="always" Required="false" Mask="true"></Config>
+  <Config Name="Ollama Base URL" Target="OLLAMA_BASE_URL" Default="http://ollama:11434" Mode="" Description="Only used when AI Provider = ollama. Point at a local/LAN Ollama instance." Type="Variable" Display="always" Required="false" Mask="false">http://ollama:11434</Config>
+
+  <Config Name="Translate Provider" Target="TRANSLATE_PROVIDER" Default="none" Mode="" Description="Optional: none | claude | deepl | google_free. Needed to merge non-English listings by title." Type="Variable" Display="advanced" Required="false" Mask="false">none</Config>
+  <Config Name="Anthropic API Key" Target="ANTHROPIC_API_KEY" Default="" Mode="" Description="Used by Translate Provider = claude" Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
+  <Config Name="Octopart Client ID" Target="OCTOPART_CLIENT_ID" Default="" Mode="" Description="Free Nexar key: https://nexar.com -- aggregates Mouser/Digi-Key/LCSC pricing by part number" Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
+  <Config Name="Octopart Client Secret" Target="OCTOPART_CLIENT_SECRET" Default="" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
+  <Config Name="eBay Client ID" Target="EBAY_CLIENT_ID" Default="" Mode="" Description="Optional -- without it the eBay baseline falls back to browser scraping" Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
+  <Config Name="eBay Client Secret" Target="EBAY_CLIENT_SECRET" Default="" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
+  <Config Name="Proxy" Target="BUILDHUB_PROXY" Default="" Mode="" Description="Optional residential proxy URL(s), comma-separated" Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
+</Container>
