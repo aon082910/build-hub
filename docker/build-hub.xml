@@ -6,7 +6,7 @@
   <Network>bridge</Network>
   <Privileged>false</Privileged>
   <Project>https://github.com/aon082910/build-hub</Project>
-  <TemplateURL>https://raw.githubusercontent.com/aon082910/AoN-Unraid-Apps/main/templates/build-hub.xml</TemplateURL>
+  <TemplateURL>https://raw.githubusercontent.com/aon082910/AoN-Unraid-Apps/main/Build-Hub/build-hub.xml</TemplateURL>
   <ReadMe>https://raw.githubusercontent.com/aon082910/build-hub/main/UNRAID.md</ReadMe>
   <License>MIT</License>
   <Overview>
@@ -27,7 +27,7 @@ in a real Chromium, and Docker's default 64MB /dev/shm makes that crash silently
   </Overview>
   <Category>Tools:Utilities Network:Web</Category>
   <WebUI>http://[IP]:[PORT:8000]/</WebUI>
-  <Icon>https://raw.githubusercontent.com/aon082910/AoN-Unraid-Apps/main/icon.png</Icon>
+  <Icon>https://raw.githubusercontent.com/aon082910/AoN-Unraid-Apps/main/Build-Hub/icon.png</Icon>
   <ExtraParams>--shm-size=1g</ExtraParams>
   <Date>2026-09-01</Date>
   <Changes>Initial release</Changes>

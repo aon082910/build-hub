@@ -70,7 +70,7 @@ The manual routes are below for anyone not using CA.
 
 ```bash
 wget -O /boot/config/plugins/dockerMan/templates-user/my-build-hub.xml \
-  https://raw.githubusercontent.com/aon082910/AoN-Unraid-Apps/main/templates/build-hub.xml
+  https://raw.githubusercontent.com/aon082910/AoN-Unraid-Apps/main/Build-Hub/build-hub.xml
 ```
 
 Then
