@@ -260,3 +260,221 @@ class OctopartAdapter(SiteAdapter):
         if img:
             offer.image_urls.append(img)
         return offer
+
+
+class MouserAdapter(SiteAdapter):
+    """Mouser Electronics -- official Search API v2, keyed on a free API key.
+
+    HONESTY NOTE, same as LCSC above: this is written from Mouser's published API
+    docs (https://www.mouser.com/api-hub/), not verified against a live account.
+    Response field names occasionally drift between API versions -- if this starts
+    returning nothing, run `selftest --site mouser` and check the raw payload shape
+    before assuming the code is wrong.
+    """
+
+    key = "mouser"
+    name = "Mouser Electronics"
+    base_url = "https://www.mouser.com"
+    home_currency = "USD"
+
+    SEARCH_URL = "https://api.mouser.com/api/v2/search/keyword"
+
+    def search(self, keyword: str, max_pages: int | None = None) -> Iterator[RawOffer]:
+        s = get_settings()
+        if not s.mouser_api_key:
+            log.info("[mouser] MOUSER_API_KEY not configured, skipping. "
+                     "Free key: https://www.mouser.com/api-hub/")
+            return
+
+        records = min(50, (max_pages or 1) * 25)
+        try:
+            payload = self.fetcher.post(
+                f"{self.SEARCH_URL}?apiKey={s.mouser_api_key}",
+                json_body={
+                    "SearchByKeywordRequest": {
+                        "keyword": keyword,
+                        "records": records,
+                        "startingRecord": 0,
+                        "searchOptions": "",
+                        "searchWithYourSignUpLanguage": "",
+                    }
+                },
+                headers={"Content-Type": "application/json"},
+            ).json()
+        except Exception as e:
+            log.warning("[mouser] search failed: %s", e)
+            return
+
+        errors = (payload.get("Errors") or [])
+        if errors:
+            log.error("[mouser] API returned errors: %s", [e.get("Message") for e in errors])
+            return
+
+        parts = ((payload.get("SearchResults") or {}).get("Parts") or [])
+        for part in parts:
+            offer = self._offer(part)
+            if offer:
+                yield offer
+
+    def _offer(self, part: dict) -> Optional[RawOffer]:
+        mpn = clean(str(part.get("ManufacturerPartNumber") or ""))
+        mouser_pn = clean(str(part.get("MouserPartNumber") or ""))
+        if not mpn and not mouser_pn:
+            return None
+        brand = clean(str(part.get("Manufacturer") or ""))
+
+        offer = RawOffer(
+            site_key=self.key,
+            site_product_id=mouser_pn or mpn,
+            url=part.get("ProductDetailUrl") or f"{self.base_url}/c/?q={quote_plus(mpn)}",
+            title=f"{mpn} {clean(str(part.get('Description') or ''))}".strip()[:512],
+            currency="USD",
+            mpn=mpn or None,
+            model=mpn or None,
+            brand=brand or None,
+            moq=max(1, int(part.get("Min") or 1)),
+            seller_name="Mouser Electronics",
+            in_stock="in stock" in str(part.get("Availability") or "").lower(),
+            raw={"source": "mouser_api"},
+        )
+        for tier in part.get("PriceBreaks") or []:
+            try:
+                qty = int(tier.get("Quantity"))
+                price = float(str(tier.get("Price") or "").lstrip("$").replace(",", ""))
+            except (TypeError, ValueError):
+                continue
+            offer.tiers.append(RawTier(qty, None, price, tier.get("Currency") or "USD"))
+        if offer.tiers:
+            offer.tiers.sort(key=lambda t: t.min_qty)
+            for a, b in zip(offer.tiers, offer.tiers[1:]):
+                a.max_qty = b.min_qty - 1
+            offer.price_min = min(t.price for t in offer.tiers)
+            offer.price_max = max(t.price for t in offer.tiers)
+
+        img = part.get("ImagePath")
+        if img:
+            offer.image_urls.append(img)
+        return offer
+
+
+class DigiKeyAdapter(SiteAdapter):
+    """Digi-Key -- official Product Search API v4, OAuth2 client-credentials.
+
+    Same shape as Octopart's token flow above: exchange a client id/secret for a
+    bearer token, then call the search endpoint.
+
+    HONESTY NOTE: written from Digi-Key's published API docs
+    (https://developer.digikey.com/), not verified against a live account -- Digi-Key
+    requires an approved app registration to get credentials at all, which this
+    project cannot obtain on your behalf. Verify with `selftest --site digikey`
+    before trusting it.
+    """
+
+    key = "digikey"
+    name = "Digi-Key"
+    base_url = "https://www.digikey.com"
+    home_currency = "USD"
+
+    TOKEN_URL = "https://api.digikey.com/v1/oauth2/token"
+    SEARCH_URL = "https://api.digikey.com/products/v4/search/keyword"
+
+    def __init__(self, config=None):
+        super().__init__(config)
+        self._token: Optional[str] = None
+
+    def _access_token(self) -> Optional[str]:
+        if self._token:
+            return self._token
+        s = get_settings()
+        if not (s.digikey_client_id and s.digikey_client_secret):
+            return None
+        try:
+            payload = self.fetcher.post(
+                self.TOKEN_URL,
+                data={
+                    "grant_type": "client_credentials",
+                    "client_id": s.digikey_client_id,
+                    "client_secret": s.digikey_client_secret,
+                },
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+            ).json()
+        except Exception as e:
+            log.error("[digikey] token request failed: %s", e)
+            return None
+        self._token = payload.get("access_token")
+        return self._token
+
+    def search(self, keyword: str, max_pages: int | None = None) -> Iterator[RawOffer]:
+        s = get_settings()
+        token = self._access_token()
+        if not token:
+            log.info("[digikey] DIGIKEY_CLIENT_ID/SECRET not configured, skipping. "
+                     "Requires an approved app: https://developer.digikey.com")
+            return
+
+        limit = min(50, (max_pages or 1) * 25)
+        try:
+            payload = self.fetcher.post(
+                self.SEARCH_URL,
+                json_body={"Keywords": keyword, "Limit": limit, "Offset": 0},
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "X-DIGIKEY-Client-Id": s.digikey_client_id,
+                    "X-DIGIKEY-Locale-Site": "US",
+                    "X-DIGIKEY-Locale-Language": "en",
+                    "X-DIGIKEY-Locale-Currency": "USD",
+                    "Content-Type": "application/json",
+                },
+            ).json()
+        except Exception as e:
+            log.warning("[digikey] search failed: %s", e)
+            return
+
+        for product in payload.get("Products") or []:
+            offer = self._offer(product)
+            if offer:
+                yield offer
+
+    def _offer(self, product: dict) -> Optional[RawOffer]:
+        mpn = clean(str(product.get("ManufacturerProductNumber") or ""))
+        if not mpn:
+            return None
+        brand = clean(str((product.get("Manufacturer") or {}).get("Name") or ""))
+        desc = clean(str((product.get("ProductDescription") or {}).get("ProductDescription") or ""))
+
+        variations = product.get("ProductVariations") or []
+        moq = 1
+        tiers: list = []
+        for var in variations:
+            moq = max(1, int(var.get("MinimumOrderQuantity") or moq))
+            for tier in var.get("StandardPricing") or []:
+                try:
+                    qty = int(tier.get("BreakQuantity"))
+                    price = float(tier.get("UnitPrice"))
+                except (TypeError, ValueError):
+                    continue
+                tiers.append(RawTier(qty, None, price, "USD"))
+
+        offer = RawOffer(
+            site_key=self.key,
+            site_product_id=mpn,
+            url=product.get("ProductUrl") or f"{self.base_url}/products/en?keywords={quote_plus(mpn)}",
+            title=f"{mpn} {desc}".strip()[:512],
+            currency="USD",
+            mpn=mpn,
+            model=mpn,
+            brand=brand or None,
+            moq=moq,
+            seller_name="Digi-Key",
+            raw={"source": "digikey_api"},
+        )
+        if tiers:
+            tiers.sort(key=lambda t: t.min_qty)
+            offer.tiers = tiers[:8]
+            offer.price_min = min(t.price for t in tiers)
+            offer.price_max = max(t.price for t in tiers)
+
+        img = product.get("PhotoUrl")
+        if img:
+            offer.image_urls.append(img)
+        return offer

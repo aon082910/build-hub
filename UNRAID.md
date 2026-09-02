@@ -241,7 +241,9 @@ None of these are required to boot; the app skips whatever capability is missing
 | `EBAY_CLIENT_ID` / `EBAY_CLIENT_SECRET` | eBay falls back to browser scraping -- works, just slower. Free keys at developer.ebay.com |
 | `BUILDHUB_PROXY` | Crawls come from your home IP. Fine for light use; a residential proxy is strongly recommended for sustained crawling. One URL, or several comma-separated for round-robin |
 | `CN_PROVIDER_KEY` | Taobao / Tmall / 1688 stay unavailable without a browser login. See below |
-| `OCTOPART_CLIENT_ID` / `SECRET` | Electronic-component part-number lookup (Mouser/Digi-Key/LCSC pricing) is skipped |
+| `OCTOPART_CLIENT_ID` / `SECRET` | Electronic-component part-number lookup (Mouser/Digi-Key/LCSC pricing via the Octopart aggregator) is skipped |
+| `MOUSER_API_KEY` | Direct Mouser search is skipped (Octopart may still surface Mouser pricing) |
+| `DIGIKEY_CLIENT_ID` / `SECRET` | Direct Digi-Key search is skipped (Octopart may still surface Digi-Key pricing) |
 | `AI_PROVIDER` (+ `AI_API_KEY` or `OLLAMA_BASE_URL`) | AI-generated BOMs (`/bom/generate`, `generate-bom` on the CLI) are disabled and report themselves as such. `none` (default), `anthropic`, or `ollama` |
 
 Translations are cached by content hash, so a repeat crawl of the same listings costs

@@ -52,7 +52,15 @@ def parse_catalog_file(raw_bytes: bytes, fmt: str) -> list[dict]:
     if fmt == "json":
         data = json.loads(text)
         if isinstance(data, dict):
-            data = data.get("items") or data.get("parts") or data.get("rows") or []
+            for key in ("items", "parts", "rows"):
+                if key in data:
+                    data = data[key]
+                    break
+            else:
+                raise ValueError(
+                    "JSON object has none of the expected 'items'/'parts'/'rows' keys -- "
+                    "expected a list of objects, or {\"items\": [...]}"
+                )
         if not isinstance(data, list):
             raise ValueError("JSON catalog must be a list of objects (or {\"items\": [...]})")
         rows = [{str(k).strip().lower(): v for k, v in (row or {}).items()} for row in data]

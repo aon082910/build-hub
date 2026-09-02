@@ -149,6 +149,16 @@ sites:
     delay_seconds: 2.0
     concurrency: 1
 
+  mouser:
+    enabled: true      # needs MOUSER_API_KEY, else skipped
+    delay_seconds: 1.0
+    concurrency: 2
+
+  digikey:
+    enabled: true      # needs DIGIKEY_CLIENT_ID/SECRET, else skipped
+    delay_seconds: 1.0
+    concurrency: 2
+
   tomtop:
     # Disabled: tomtop.com resets the TLS connection on every request,
     # including its own homepage -- a site-level block or outage, not a

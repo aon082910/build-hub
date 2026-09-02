@@ -160,6 +160,26 @@ SITES = [
         notes="Retail, ships to US. Frequent coupon pricing.",
     ),
     dict(
+        key="mouser",
+        name="Mouser Electronics",
+        base_url="https://www.mouser.com",
+        home_currency="USD",
+        default_language="en",
+        notes="Authorized electronic-component distributor. Official Search API, "
+        "free key. Real manufacturer part numbers, so matching is exact rather "
+        "than fuzzy.",
+    ),
+    dict(
+        key="digikey",
+        name="Digi-Key",
+        base_url="https://www.digikey.com",
+        home_currency="USD",
+        default_language="en",
+        notes="Authorized electronic-component distributor. Official Product "
+        "Search API v4, needs an approved app registration. Real manufacturer "
+        "part numbers, so matching is exact rather than fuzzy.",
+    ),
+    dict(
         key="custom",
         name="Custom Catalog",
         base_url="",

@@ -14,7 +14,7 @@ BOMs, a custom catalog upload, and the config below.
 
 ```
 AliExpress  Alibaba  1688  Taobao  Tmall  DHgate  Chinavasion
-Global Sources  Made-in-China  GearBest  Banggood  eBay  Octopart  LCSC
+Global Sources  Made-in-China  GearBest  Banggood  eBay  Octopart  LCSC  Mouser  Digi-Key
 ```
 
 ---
