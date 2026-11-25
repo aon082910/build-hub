@@ -29,8 +29,9 @@ in a real Chromium, and Docker's default 64MB /dev/shm makes that crash silently
   <WebUI>http://[IP]:[PORT:8000]/</WebUI>
   <Icon>https://raw.githubusercontent.com/aon082910/AoN-Unraid-Apps/main/Build-Hub/icon.png</Icon>
   <ExtraParams>--shm-size=1g</ExtraParams>
-  <Date>2026-09-02</Date>
-  <Changes>v1.0.0: added direct Mouser and Digi-Key distributor adapters alongside Octopart</Changes>
+  <Date>2026-11-25</Date>
+  <Changes>v1.1.0: OpenAI-compatible AI provider (AI_PROVIDER=openai / TRANSLATE_PROVIDER=openai with LLM_BASE_URL, LLM_MODEL, LLM_API_KEY) for gateways such as OmniRoute; image-URL search now refuses private/LAN addresses (SSRF guard); AI BOM drafting needs the admin token and is size and rate limited.
+v1.0.0: added direct Mouser and Digi-Key distributor adapters alongside Octopart</Changes>
   <MinVer>6.1</MinVer>
   <Description>
 Offline parts search and AI-assisted BOM generation for electronics and 3D-printing
