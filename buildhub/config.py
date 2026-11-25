@@ -80,7 +80,12 @@ class Settings(BaseSettings):
     # "none" disables the feature entirely; /bom/generate reports it as disabled
     # rather than erroring. ai_api_key is used for the "anthropic" provider only --
     # ollama needs no key, just a reachable base_url.
-    ai_provider: str = "none"           # none | anthropic | ollama
+    # "openai" = any OpenAI-compatible gateway (OmniRoute: LLM_BASE_URL=http://192.168.1.5:20128/v1,
+    # LLM_MODEL=apps-default, LLM_API_KEY=<OmniRoute key>). Also usable as TRANSLATE_PROVIDER=openai.
+    llm_base_url: str = ""
+    llm_api_key: str = ""
+    llm_model: str = "apps-default"
+    ai_provider: str = "none"           # none | anthropic | ollama | openai
     ai_api_key: str = ""
     ai_model: str = "claude-sonnet-5"
     ollama_base_url: str = "http://ollama:11434"

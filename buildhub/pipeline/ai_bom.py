@@ -60,10 +60,37 @@ def generate_parts_list(description: str) -> str:
         raw = _generate_anthropic(description, settings)
     elif provider == "ollama":
         raw = _generate_ollama(description, settings)
+    elif provider == "openai":
+        raw = _generate_openai(description, settings)
     else:
-        raise RuntimeError(f"Unknown AI_PROVIDER: {provider!r} (expected anthropic or ollama)")
+        raise RuntimeError(f"Unknown AI_PROVIDER: {provider!r} (expected anthropic, ollama or openai)")
 
     return _clean_lines(raw)
+
+
+def _generate_openai(description: str, settings) -> str:
+    """OpenAI-compatible endpoint (OmniRoute and similar)."""
+    import httpx
+
+    base_url = (settings.llm_base_url or "").rstrip("/")
+    if not base_url:
+        raise RuntimeError("AI_PROVIDER=openai but LLM_BASE_URL is unset")
+    headers = {"Authorization": f"Bearer {settings.llm_api_key}"} if settings.llm_api_key else {}
+    resp = httpx.post(
+        f"{base_url}/chat/completions",
+        headers=headers,
+        json={
+            "model": settings.llm_model,
+            "max_tokens": 2000,
+            "messages": [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": description},
+            ],
+        },
+        timeout=180,
+    )
+    resp.raise_for_status()
+    return resp.json()["choices"][0]["message"]["content"] or ""
 
 
 def _generate_anthropic(description: str, settings) -> str:

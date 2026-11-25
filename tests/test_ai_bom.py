@@ -197,12 +197,61 @@ def test_ollama_backend():
     _set_env(AI_PROVIDER=None, OLLAMA_BASE_URL=None)
 
 
+# ------------------------------------------------------------------ openai-compatible
+
+
+class _FakeOpenAIResponse:
+    def __init__(self, text):
+        self._text = text
+
+    def raise_for_status(self):
+        pass
+
+    def json(self):
+        return {"choices": [{"message": {"content": self._text}}]}
+
+
+def test_openai_backend():
+    print("\nopenai-compatible backend (OmniRoute)")
+    _set_env(AI_PROVIDER="openai", LLM_BASE_URL="", LLM_MODEL=None, LLM_API_KEY=None)
+    try:
+        ai_bom.generate_parts_list("esp32 weather station")
+        check("raises with an empty LLM_BASE_URL", False, True)
+    except RuntimeError as e:
+        check_true("error mentions LLM_BASE_URL", "LLM_BASE_URL" in str(e))
+
+    _set_env(LLM_BASE_URL="http://gateway.local:20128/v1/", LLM_API_KEY="test-key")
+    import httpx
+
+    calls = {}
+
+    def fake_post(url, headers=None, json=None, timeout=None):
+        calls["url"] = url
+        calls["headers"] = headers
+        calls["json"] = json
+        return _FakeOpenAIResponse("2 x M3 heat-set insert\n1 x 608 bearing")
+
+    real_post = httpx.post
+    httpx.post = fake_post
+    try:
+        out = ai_bom.generate_parts_list("a spool holder")
+        check("two lines returned", len(out.splitlines()), 2)
+        check("posts to chat/completions under the base url",
+              calls["url"], "http://gateway.local:20128/v1/chat/completions")
+        check("default model is the apps-default combo", calls["json"]["model"], "apps-default")
+        check("bearer key sent", calls["headers"].get("Authorization"), "Bearer test-key")
+    finally:
+        httpx.post = real_post
+    _set_env(AI_PROVIDER=None, LLM_BASE_URL=None, LLM_API_KEY=None)
+
+
 def run() -> int:
     test_disabled_by_default()
     test_unknown_provider()
     test_clean_lines()
     test_anthropic_backend()
     test_ollama_backend()
+    test_openai_backend()
 
     print()
     print("=" * 62)
